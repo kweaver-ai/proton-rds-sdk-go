@@ -41,9 +41,9 @@ func testDM8() {
 	op, err := sql.Open("proton-rds", dsn)
 
 	// os.Setenv("DB_TYPE", "kdb9")
-	// op, err := sql.Open("proton-rds", "system:system@tcp(10.4.134.227:54321)/anyshare?timeout=1s")
+	// op, err := sql.Open("proton-rds", "system:system@tcp(localhost:54321)/anyshare?timeout=1s")
 
-	//op, err := sql.Open("proton-rds", "root:eisoo.com123@tcp(10.4.134.254:3306)/test?timeout=10s")
+	//op, err := sql.Open("proton-rds", "root:eisoo.com123@tcp(localhost:3306)/test?timeout=10s")
 	if err != nil {
 		fmt.Println(err)
 		return
