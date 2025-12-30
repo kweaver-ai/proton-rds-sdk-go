@@ -2,7 +2,7 @@
 Simple install the package to your [$GOPATH](https://github.com/golang/go/wiki/GOPATH "GOPATH") with the [go tool](https://golang.org/cmd/go/ "go command") from shell:
 ```bash
 $ export GOPRIVATE="devops.aishu.cn"
-$ go get -u github.com/AISHU-Technology/proton-rds-sdk-go/sqlx
+$ go get -u github.com/kweaver-ai/proton-rds-sdk-go/sqlx
 ```
 Make sure [Git is installed](https://git-scm.com/downloads) on your machine and in your system's `PATH`.
 
@@ -31,7 +31,7 @@ type DB
 Examples are available in example directory.
 ```go
 import (
-	"github.com/AISHU-Technology/proton-rds-sdk-go/sqlx"
+	"github.com/kweaver-ai/proton-rds-sdk-go/sqlx"
 	_ "github.com/go-sql-driver/mysql"
 )
 

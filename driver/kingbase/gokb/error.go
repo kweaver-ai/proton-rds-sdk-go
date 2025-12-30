@@ -12,9 +12,9 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
-  
+
   3.修改内容：
 
 ******************************************************************************/
@@ -103,28 +103,43 @@ func (err *Error) Get(k byte) (value string) {
 
 func parseError(r *readBuf) *Error {
 	err := new(Error)
-	for t := r.byte()
-	t != 0
-	t = r.byte() {
+	for t := r.byte(); t != 0; t = r.byte() {
 		msg := r.string()
 		switch t {
-		case 'S': err.Severity = msg
-		case 'C': err.Code = ErrorCode(msg)
-		case 'M': err.Message = msg
-		case 'D': err.Detail = msg
-		case 'H': err.Hint = msg
-		case 'P': err.Position = msg
-		case 'p': err.InternalPosition = msg
-		case 'q': err.InternalQuery = msg
-		case 'W': err.Where = msg
-		case 's': err.Schema = msg
-		case 't': err.Table = msg
-		case 'c': err.Column = msg
-		case 'd': err.DataTypeName = msg
-		case 'n': err.Constraint = msg
-		case 'F': err.File = msg
-		case 'L': err.Line = msg
-		case 'R': err.Routine = msg
+		case 'S':
+			err.Severity = msg
+		case 'C':
+			err.Code = ErrorCode(msg)
+		case 'M':
+			err.Message = msg
+		case 'D':
+			err.Detail = msg
+		case 'H':
+			err.Hint = msg
+		case 'P':
+			err.Position = msg
+		case 'p':
+			err.InternalPosition = msg
+		case 'q':
+			err.InternalQuery = msg
+		case 'W':
+			err.Where = msg
+		case 's':
+			err.Schema = msg
+		case 't':
+			err.Table = msg
+		case 'c':
+			err.Column = msg
+		case 'd':
+			err.DataTypeName = msg
+		case 'n':
+			err.Constraint = msg
+		case 'F':
+			err.File = msg
+		case 'L':
+			err.Line = msg
+		case 'R':
+			err.Routine = msg
 		}
 	}
 	return err
@@ -140,7 +155,7 @@ func (err Error) Error() (s string) {
 	return
 }
 
-func errorf(s string, args ...interface{}) (){
+func errorf(s string, args ...interface{}) {
 	panic(fmt.Errorf("kb: %s", fmt.Sprintf(s, args...)))
 }
 
@@ -149,16 +164,20 @@ func fmterrorf(s string, args ...interface{}) (err error) {
 	return
 }
 
-func errRecoverNoErrBadConn(err *error) (){
+func errRecoverNoErrBadConn(err *error) {
 	e := recover()
-	if nil == e { return }
+	if nil == e {
+		return
+	}
 	ok := false
 	*err, ok = e.(error)
-	if !ok { *err = fmt.Errorf("kb: unexpected error: %#v", e) }
+	if !ok {
+		*err = fmt.Errorf("kb: unexpected error: %#v", e)
+	}
 	return
 }
 
-func (cn *conn) errRecover(err *error) (){
+func (cn *conn) errRecover(err *error) {
 	e := recover()
 	switch v := e.(type) {
 	case nil:
@@ -166,19 +185,27 @@ func (cn *conn) errRecover(err *error) (){
 		cn.bad = true
 		panic(v)
 	case *Error:
-		if v.Fatal() { *err = driver.ErrBadConn
-		} else { *err = v }
+		if v.Fatal() {
+			*err = driver.ErrBadConn
+		} else {
+			*err = v
+		}
 		panic(fmt.Sprintf("kb: unexpected error: %v\n", e))
 	case *net.OpError:
 		cn.bad = true
 		*err = v
 	case error:
-		if v == io.EOF || v.(error).Error() == "remote error: handshake failure" { *err = driver.ErrBadConn
-		} else { *err = v }
+		if v == io.EOF || v.(error).Error() == "remote error: handshake failure" {
+			*err = driver.ErrBadConn
+		} else {
+			*err = v
+		}
 	default:
 		cn.bad = true
 		panic(fmt.Sprintf("unknown error: %#v", e))
 	}
 	// 返回ErrBadConn时需要标记该连接为坏连接，因为*Tx不会再database/sql中进行标记
-	if driver.ErrBadConn == *err { cn.bad = true }
+	if driver.ErrBadConn == *err {
+		cn.bad = true
+	}
 }

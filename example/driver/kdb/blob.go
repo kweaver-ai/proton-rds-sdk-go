@@ -9,7 +9,7 @@ import (
 	"io"
 	"log"
 
-	_ "github.com/AISHU-Technology/proton-rds-sdk-go/driver"
+	_ "github.com/kweaver-ai/proton-rds-sdk-go/driver"
 )
 
 type blobType int32

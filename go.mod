@@ -1,4 +1,4 @@
-module github.com/AISHU-Technology/proton-rds-sdk-go
+module github.com/kweaver-ai/proton-rds-sdk-go
 
 go 1.24.0
 
@@ -10,6 +10,7 @@ require (
 	github.com/shopspring/decimal v1.4.0
 	github.com/smartystreets/goconvey v1.8.1
 	github.com/stretchr/testify v1.11.1
+	golang.org/x/sys v0.39.0
 )
 
 require (

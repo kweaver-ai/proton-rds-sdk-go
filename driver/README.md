@@ -25,7 +25,7 @@ type RDSDriver
 Examples are available in example directory.
 ```go
 import (
-	_ "github.com/AISHU-Technology/proton-rds-sdk-go/driver"
+	_ "github.com/kweaver-ai/proton-rds-sdk-go/driver"
 )
 
 // ...

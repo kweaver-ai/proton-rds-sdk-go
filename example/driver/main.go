@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver"
-	"github.com/AISHU-Technology/proton-rds-sdk-go/example/driver/kdb"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver"
+	"github.com/kweaver-ai/proton-rds-sdk-go/example/driver/kdb"
 )
 
 type TestDBInfo struct {

@@ -3,7 +3,7 @@
 package mysqlOid
 
 import (
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/kingbase/gokb/oid"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/kingbase/gokb/oid"
 )
 
 var MysqlOid = oid.AllOid{

@@ -7,7 +7,7 @@ gokb包为基于database/sql包的Kingbase驱动
 	import (
 		"database/sql"
 
-		_ "github.com/AISHU-Technology/proton-rds-sdk-go/driver/kingbase/gokb"
+		_ "github.com/kweaver-ai/proton-rds-sdk-go/driver/kingbase/gokb"
 	)
 
 	func main() {

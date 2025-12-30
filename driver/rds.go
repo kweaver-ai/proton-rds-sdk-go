@@ -6,11 +6,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/dmdb"
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/goldendb"
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/kingbase"
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/mysql"
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/tidb"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/dmdb"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/goldendb"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/kingbase"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/mysql"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/tidb"
 )
 
 type RDSDriver struct {

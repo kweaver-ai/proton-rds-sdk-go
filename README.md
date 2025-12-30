@@ -31,7 +31,7 @@ Proton RDS SDK Go 是一个专为 RDS（关系型数据库服务）设计的 Go 
 ### 安装
 
 ```bash
-go get github.com/AISHU-Technology/proton-rds-sdk-go
+go get github.com/kweaver-ai/proton-rds-sdk-go
 ```
 
 ### 基本使用
@@ -46,7 +46,7 @@ import (
     "fmt"
     "os"
     
-    _ "github.com/AISHU-Technology/proton-rds-sdk-go/driver"
+    _ "github.com/kweaver-ai/proton-rds-sdk-go/driver"
 )
 
 func main() {
@@ -78,7 +78,7 @@ package main
 import (
     "fmt"
     
-    "github.com/AISHU-Technology/proton-rds-sdk-go/sqlx"
+    "github.com/kweaver-ai/proton-rds-sdk-go/sqlx"
 )
 
 func main() {

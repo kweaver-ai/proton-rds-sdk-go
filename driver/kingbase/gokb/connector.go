@@ -11,9 +11,9 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
-  
+
   3.修改内容：
 
 ******************************************************************************/
@@ -26,8 +26,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 // Connect使用此Connector的固定配置返回到数据库的连接
@@ -58,31 +58,32 @@ func NewConnector(dsn string) (conn *Connector, err error) {
 
 	if strings.HasPrefix(dsn, "kingbase://") || strings.HasPrefix(dsn, "kingbase://") {
 		dsn, err = ParseURL(dsn)
-		if nil != err { return nil, err }
+		if nil != err {
+			return nil, err
+		}
 	}
 
-	if err := parseOpts(dsn, o)
-	err != nil { return nil, err }
+	if err := parseOpts(dsn, o); err != nil {
+		return nil, err
+	}
 
 	// 未给出应用名时使用默认的应用名
-	if fallback, ok := o["fallback_application_name"]
-	ok {
-		if _, ok := o["application_name"]
-		!ok {
+	if fallback, ok := o["fallback_application_name"]; ok {
+		if _, ok := o["application_name"]; !ok {
 			o["application_name"] = fallback
 		}
 	}
 
 	// 不能使用除UTF-8以外的客户端编码，允许显示地设置为UTF-8
 	// option中也可以设置客户端编码但一般将client_encoding作为单独的连接参数发送
-	if enc, ok := o["client_encoding"]
-	ok && !isUTF8(enc) {
+	if enc, ok := o["client_encoding"]; ok && !isUTF8(enc) {
 		return nil, errors.New("client_encoding must be absent or 'UTF8'")
 	}
 	o["client_encoding"] = "UTF8"
-	if datestyle, ok := o["datestyle"]
-	ok {
-		if "ISO, MDY" != datestyle { return nil, fmt.Errorf("setting datestyle must be absent or %v; got %v", "ISO, MDY", datestyle) }
+	if datestyle, ok := o["datestyle"]; ok {
+		if "ISO, MDY" != datestyle {
+			return nil, fmt.Errorf("setting datestyle must be absent or %v; got %v", "ISO, MDY", datestyle)
+		}
 	} else {
 		o["datestyle"] = "ISO, MDY"
 	}
@@ -90,7 +91,9 @@ func NewConnector(dsn string) (conn *Connector, err error) {
 	// 如果没有提供用户名，则使用当前操作系统的的用户名
 	if _, ok := o["user"]; !ok {
 		u, err := userCurrent()
-		if nil != err { return nil, err }
+		if nil != err {
+			return nil, err
+		}
 		o["user"] = u
 	}
 
@@ -107,7 +110,7 @@ func NewConnector(dsn string) (conn *Connector, err error) {
 	if v, ok := o["keepalive_count"]; ok {
 		timeout.keepalive_count, _ = strconv.Atoi(v)
 	} else {
-		timeout.keepalive_count = 1//次数使用0并不会使用go的默认值1，所以此处显式赋1
+		timeout.keepalive_count = 1 //次数使用0并不会使用go的默认值1，所以此处显式赋1
 	}
 	if v, ok := o["tcp_user_timeout"]; ok {
 		timeout.tcp_user_timeout, _ = strconv.Atoi(v)
@@ -115,7 +118,7 @@ func NewConnector(dsn string) (conn *Connector, err error) {
 		timeout.tcp_user_timeout = 0
 	}
 	return &Connector{
-		opts: o,
-		dialer: defaultDialer{ d: CreateDialer(timeout) },
+		opts:   o,
+		dialer: defaultDialer{d: CreateDialer(timeout)},
 	}, nil
 }

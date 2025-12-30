@@ -1,6 +1,7 @@
-// +build go1.10
+//go:build go1.10
 
-/******************************************************************************
+/*
+*****************************************************************************
 * 版权信息：中电科金仓（北京）科技股份有限公司
 
 * 作者：KingbaseES
@@ -11,15 +12,15 @@
 
 * 其它说明：go1.10及以上版本可用
 
+  - 修改记录：
+    1.修改时间：
 
-* 修改记录：
-  1.修改时间：
-  
-  2.修改人：
-  
-  3.修改内容：
+    2.修改人：
 
-******************************************************************************/
+    3.修改内容：
+
+*****************************************************************************
+*/
 package gokb
 
 import (
@@ -38,7 +39,7 @@ func NoticeHandler(dc driver.Conn) (f func(*Error)) {
 // 一个空的handler可以用来进行取消设置
 //
 // 注意: 通知处理为同步执行，在处理程序返回之前不会继续处理命令
-func SetNoticeHandler(dc driver.Conn, handler func(*Error)) () {
+func SetNoticeHandler(dc driver.Conn, handler func(*Error)) {
 	dc.(*conn).noticeHandler = handler
 }
 
@@ -51,17 +52,18 @@ type NoticeHandlerConnector struct {
 // Connect调用底层connector的connect方法然后设置通知处理程序
 func (n *NoticeHandlerConnector) Connect(ctx context.Context) (dc driver.Conn, err error) {
 	dc, err = n.Connector.Connect(ctx)
-	if nil == err { SetNoticeHandler(dc, n.noticeHandler) }
+	if nil == err {
+		SetNoticeHandler(dc, n.noticeHandler)
+	}
 	return dc, err
 }
 
 // ConnectorNoticeHandler返回当前设置的通知处理程序(如果有的话)
 // 如果给定的connector不是ConnectorWithNoticeHandler的结果，则返回空
 func ConnectorNoticeHandler(c driver.Connector) (f func(*Error)) {
-	if c, ok := c.(*NoticeHandlerConnector)
-	ok {
+	if c, ok := c.(*NoticeHandlerConnector); ok {
 		return c.noticeHandler
-	}else {
+	} else {
 		return nil
 	}
 }
@@ -75,11 +77,10 @@ func ConnectorNoticeHandler(c driver.Connector) (f func(*Error)) {
 //
 // 注意:通知处理程序为同步执行，在返回之前不会继续处理命令
 func ConnectorWithNoticeHandler(c driver.Connector, handler func(*Error)) (nhc *NoticeHandlerConnector) {
-	if c, ok := c.(*NoticeHandlerConnector)
-	ok {
+	if c, ok := c.(*NoticeHandlerConnector); ok {
 		c.noticeHandler = handler
 		return c
-	}else {
+	} else {
 		return &NoticeHandlerConnector{Connector: c, noticeHandler: handler}
 	}
 }

@@ -11,9 +11,9 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
-  
+
   3.修改内容：
 
 ******************************************************************************/
@@ -31,7 +31,9 @@ import (
 func CopyIn(table string, columns ...string) (stmt string) {
 	stmt = "COPY " + QuoteIdentifier(table) + " ("
 	for i, col := range columns {
-		if 0 != i { stmt += ", " }
+		if 0 != i {
+			stmt += ", "
+		}
 		stmt += QuoteIdentifier(col)
 	}
 	stmt += ") FROM STDIN"
@@ -42,7 +44,9 @@ func CopyIn(table string, columns ...string) (stmt string) {
 func CopyInSchema(schema, table string, columns ...string) (stmt string) {
 	stmt = "COPY " + QuoteIdentifier(schema) + "." + QuoteIdentifier(table) + " ("
 	for i, col := range columns {
-		if 0 != i { stmt += ", " }
+		if 0 != i {
+			stmt += ", "
+		}
 		stmt += QuoteIdentifier(col)
 	}
 	stmt += ") FROM STDIN"
@@ -72,7 +76,10 @@ awaitCopyInResponse:
 		t, r := cn.recv1()
 		switch t {
 		case 'G':
-			if 0 != r.byte() { err = errBinaryCopyNotSupported; break awaitCopyInResponse }
+			if 0 != r.byte() {
+				err = errBinaryCopyNotSupported
+				break awaitCopyInResponse
+			}
 			go ci.resploop()
 			return ci, nil
 		case 'H':
@@ -81,7 +88,10 @@ awaitCopyInResponse:
 		case 'E':
 			err = parseError(r)
 		case 'Z':
-			if nil == err { ci.setBad(); errorf("unexpected ReadyForQuery in response to COPY") }
+			if nil == err {
+				ci.setBad()
+				errorf("unexpected ReadyForQuery in response to COPY")
+			}
 			cn.processReadyForQuery(r)
 			return nil, err
 		default:
@@ -99,8 +109,8 @@ awaitCopyInResponse:
 		t, r := cn.recv1()
 		switch t {
 		case 'c':
-		case'C':
-		case'E':
+		case 'C':
+		case 'E':
 		case 'Z':
 			// 完成，准备进行新的查询
 			cn.processReadyForQuery(r)
@@ -117,10 +127,12 @@ func (ci *copyin) flush(buf []byte) {
 	binary.BigEndian.PutUint32(buf[1:], uint32(len(buf)-1))
 
 	_, err := ci.cn.c.Write(buf)
-	if nil != err { panic(err) }
+	if nil != err {
+		panic(err)
+	}
 }
 
-func (ci *copyin) resploop() (){
+func (ci *copyin) resploop() {
 	for {
 		var r readBuf
 		t, err := ci.cn.recvMessage(&r)
@@ -131,10 +143,11 @@ func (ci *copyin) resploop() (){
 			return
 		}
 		switch t {
-		case 'C'://命令完成
+		case 'C': //命令完成
 		case 'N':
-			if n := ci.cn.noticeHandler
-			nil != n { n(parseError(&r)) }
+			if n := ci.cn.noticeHandler; nil != n {
+				n(parseError(&r))
+			}
 		case 'Z':
 			ci.cn.processReadyForQuery(&r)
 			ci.done <- true
@@ -151,7 +164,7 @@ func (ci *copyin) resploop() (){
 	}
 }
 
-func (ci *copyin) setBad() (){
+func (ci *copyin) setBad() {
 	ci.Lock()
 	ci.cn.bad = true
 	ci.Unlock()
@@ -173,9 +186,11 @@ func (ci *copyin) isErrorSet() (isSet bool) {
 
 // setError()设置ci.err
 // 调用者不能持有ci.Mutex.
-func (ci *copyin) setError(err error) (){
+func (ci *copyin) setError(err error) {
 	ci.Lock()
-	if nil == ci.err { ci.err = err }
+	if nil == ci.err {
+		ci.err = err
+	}
 	ci.Unlock()
 }
 
@@ -195,20 +210,30 @@ func (ci *copyin) Query(v []driver.Value) (r driver.Rows, err error) {
 // 需要调用Exec(nil)来同步COPY流
 // 因为Stmt.Close()不会返回错误，所以需要从挂起的数据中获取可能出现的错误
 func (ci *copyin) Exec(v []driver.Value) (driver.Result, error) {
-	if ci.closed { return nil, errCopyInClosed }
+	if ci.closed {
+		return nil, errCopyInClosed
+	}
 
 	var err error
-	if ci.isBad() { return nil, driver.ErrBadConn }
+	if ci.isBad() {
+		return nil, driver.ErrBadConn
+	}
 	defer ci.cn.errRecover(&err)
 
-	if ci.isErrorSet() { return nil, ci.err }
+	if ci.isErrorSet() {
+		return nil, ci.err
+	}
 
-	if 0 == len(v) { return driver.RowsAffected(0), ci.Close() }
+	if 0 == len(v) {
+		return driver.RowsAffected(0), ci.Close()
+	}
 
 	numValues := len(v)
 	for i, value := range v {
 		ci.buffer = appendEncodedText(&ci.cn.parameterStatus, ci.buffer, value)
-		if numValues-1 > i { ci.buffer = append(ci.buffer, '\t') }
+		if numValues-1 > i {
+			ci.buffer = append(ci.buffer, '\t')
+		}
 	}
 
 	ci.buffer = append(ci.buffer, '\n')
@@ -224,15 +249,23 @@ func (ci *copyin) Exec(v []driver.Value) (driver.Result, error) {
 
 func (ci *copyin) Close() error {
 	var err error
-	if ci.closed { return nil }
+	if ci.closed {
+		return nil
+	}
 	ci.closed = true
 
-	if ci.isBad() { return driver.ErrBadConn }
+	if ci.isBad() {
+		return driver.ErrBadConn
+	}
 	defer ci.cn.errRecover(&err)
 
-	if 0 < len(ci.buffer) { ci.flush(ci.buffer) }
+	if 0 < len(ci.buffer) {
+		ci.flush(ci.buffer)
+	}
 	err = ci.cn.sendSimpleMessage('c')
-	if nil != err { return err }
+	if nil != err {
+		return err
+	}
 
 	<-ci.done
 	ci.cn.inCopy = false

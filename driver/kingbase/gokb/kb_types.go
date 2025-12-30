@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/kingbase/gokb/oid"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/kingbase/gokb/oid"
 )
 
 /*****************conn.go*****************/

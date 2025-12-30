@@ -11,9 +11,9 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
-  
+
   3.修改内容：
 
 ******************************************************************************/
@@ -27,8 +27,8 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"time"
 	"reflect"
+	"time"
 
 	"github.com/golang-sql/civil"
 	"github.com/shopspring/decimal"
@@ -59,25 +59,25 @@ func IsValue(v interface{}) bool {
 		return true
 	}
 	switch v.(type) {
-	case int, int64, int32, int16, int8, sql.NullInt64://有符号整型
+	case int, int64, int32, int16, int8, sql.NullInt64: //有符号整型
 		return true
-	case uint, uint64, uint32, uint16, uint8://无符号整型
+	case uint, uint64, uint32, uint16, uint8: //无符号整型
 		return true
-	case []uint8://bytea
+	case []uint8: //bytea
 		return true
-	case float64, float32, sql.NullFloat64://浮点型
+	case float64, float32, sql.NullFloat64: //浮点型
 		return true
-	case bool, sql.NullBool://布尔类型
+	case bool, sql.NullBool: //布尔类型
 		return true
-	case string://字符串类型
+	case string: //字符串类型
 		return true
-	case time.Time://时间类型
+	case time.Time: //时间类型
 		return true
-	case CursorString://KB自定义游标类型
+	case CursorString: //KB自定义游标类型
 		return true
-	case DateTime1, civil.Date, civil.Time://兼容mssql的DateTime1, civil.Date, civil.Time
+	case DateTime1, civil.Date, civil.Time: //兼容mssql的DateTime1, civil.Date, civil.Time
 		return true
-	case VarChar, VarCharMax, NVarCharMax, NChar, sql.NullString://兼容mssql的VarChar, VarCharMax, NVarCharMax, NChar, sql.NullString
+	case VarChar, VarCharMax, NVarCharMax, NChar, sql.NullString: //兼容mssql的VarChar, VarCharMax, NVarCharMax, NChar, sql.NullString
 		return true
 	case decimal.Decimal:
 		return true
@@ -86,18 +86,19 @@ func IsValue(v interface{}) bool {
 	}
 }
 
-//callValuerValue返回vr.Value()，来自go的database/sql包
+// callValuerValue返回vr.Value()，来自go的database/sql包
 var valuerReflectType = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
+
 func callValuerValue(vr driver.Valuer) (v driver.Value, err error) {
-    if rv := reflect.ValueOf(vr); rv.Kind() == reflect.Pointer &&
-        rv.IsNil() &&
-        rv.Type().Elem().Implements(valuerReflectType) {
-        return nil, nil
-    }
-    return vr.Value()
+	if rv := reflect.ValueOf(vr); rv.Kind() == reflect.Pointer &&
+		rv.IsNil() &&
+		rv.Type().Elem().Implements(valuerReflectType) {
+		return nil, nil
+	}
+	return vr.Value()
 }
 
-//实现"CheckNamedValue"接口中的"ConvertValue"函数
+// 实现"CheckNamedValue"接口中的"ConvertValue"函数
 func (c converter) ConvertValue(v interface{}) (driver.Value, error) {
 	//判断是否为支持的in类型参数
 	if IsValue(v) {
@@ -106,22 +107,22 @@ func (c converter) ConvertValue(v interface{}) (driver.Value, error) {
 
 	//对gokb.Array等类型的支持
 	switch vr := v.(type) {
-    case driver.Valuer:
-        sv, err := callValuerValue(vr)
-        if err != nil {
-            return nil, err
-        }
-        if !IsValue(sv) {
-            return nil, fmt.Errorf("non-Value type %T returned from Value", sv)
-        }
-        return sv, nil
-    }
+	case driver.Valuer:
+		sv, err := callValuerValue(vr)
+		if err != nil {
+			return nil, err
+		}
+		if !IsValue(sv) {
+			return nil, fmt.Errorf("non-Value type %T returned from Value", sv)
+		}
+		return sv, nil
+	}
 
 	//判断是否为out类型参数
 	var sBind bindStruct
 	sBind.out, sBind.isOut = v.(sql.Out)
 	sBind.ret, sBind.isRet = v.(*ReturnStatus)
-	if sBind.isRet {//SQLSERVER模式下存储过程返回值类型
+	if sBind.isRet { //SQLSERVER模式下存储过程返回值类型
 		return v, nil
 	}
 	switch sBind.out.Dest.(type) {
@@ -239,13 +240,13 @@ func (st *stmt) QueryContext(ctx context.Context, args []driver.NamedValue) (dri
 	return r, err
 }
 
-//实现"ExecerContext"接口
+// 实现"ExecerContext"接口
 func (cn *conn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
 	var newArgs []driver.Value
 	var err error
 
 	if len(args) != 0 {
-		if(cn.databaseMode == "sqlserver") {
+		if cn.databaseMode == "sqlserver" {
 			query, newArgs, _, err = replaceProcName(query, args, nil)
 		} else {
 			query, newArgs, _, err = replaceHolderMarkers(query, args, nil)
@@ -271,7 +272,7 @@ func (st *stmt) ExecContext(ctx context.Context, args []driver.NamedValue) (driv
 	var err error
 
 	if len(args) != 0 {
-		if(st.cn.databaseMode == "sqlserver") {
+		if st.cn.databaseMode == "sqlserver" {
 			st.queryName, newArgs, st.nameList, err = replaceProcName(st.queryName, args, st.nameList)
 		} else {
 			st.queryName, newArgs, st.nameList, err = replaceHolderMarkers(st.queryName, args, st.nameList)

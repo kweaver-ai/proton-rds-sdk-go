@@ -11,9 +11,9 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
-  
+
   3.修改内容：
 
 ******************************************************************************/
@@ -50,30 +50,45 @@ import (
 // 将转为空，并使用默认的连接参数
 func ParseURL(url string) (s string, err error) {
 	u, err := nurl.Parse(url)
-	if nil != err { return "", err }
+	if nil != err {
+		return "", err
+	}
 
-	if u.Scheme != "kingbase"  { return "", fmt.Errorf("invalid connection protocol: %s", u.Scheme) }
+	if u.Scheme != "kingbase" {
+		return "", fmt.Errorf("invalid connection protocol: %s", u.Scheme)
+	}
 
 	var kvs []string
 	escaper := strings.NewReplacer(` `, `\ `, `'`, `\'`, `\`, `\\`)
 	accrue := func(k, v string) {
-		if "" != v { kvs = append(kvs, k+"="+escaper.Replace(v)) }
+		if "" != v {
+			kvs = append(kvs, k+"="+escaper.Replace(v))
+		}
 	}
 
 	if nil != u.User {
-		v := u.User.Username(); accrue("user", v)
+		v := u.User.Username()
+		accrue("user", v)
 
-		v, _ = u.User.Password(); accrue("password", v)
+		v, _ = u.User.Password()
+		accrue("password", v)
 	}
 
-	if host, port, err := net.SplitHostPort(u.Host)
-	nil != err { accrue("host", u.Host)
-	} else { accrue("host", host); accrue("port", port) }
+	if host, port, err := net.SplitHostPort(u.Host); nil != err {
+		accrue("host", u.Host)
+	} else {
+		accrue("host", host)
+		accrue("port", port)
+	}
 
-	if "" != u.Path { accrue("dbname", u.Path[1:]) }
+	if "" != u.Path {
+		accrue("dbname", u.Path[1:])
+	}
 
 	q := u.Query()
-	for k := range q { accrue(k, q.Get(k)) }
+	for k := range q {
+		accrue(k, q.Get(k))
+	}
 
 	sort.Strings(kvs)
 	return strings.Join(kvs, " "), nil

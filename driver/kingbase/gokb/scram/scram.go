@@ -1,4 +1,5 @@
-/******************************************************************************
+/*
+*****************************************************************************
 * 版权信息：中电科金仓（北京）科技股份有限公司
 
 * 作者：KingbaseES
@@ -9,14 +10,15 @@
 
 * 其它说明：
 
-* 修改记录：
-  1.修改时间：
-  
-  2.修改人：
-  
-  3.修改内容：
+  - 修改记录：
+    1.修改时间：
 
-******************************************************************************/
+    2.修改人：
+
+    3.修改内容：
+
+*****************************************************************************
+*/
 package scram
 
 import (
@@ -33,17 +35,16 @@ import (
 // SCRAM相关的认证方法(如SCRAM-SHA-1, SCRAM-SHA-256等).
 // 可以在SASL会话中通过类似以下的方式进行使用:
 //
-//    var in []byte
-//    var client = scram.NewClient(sha1.New, user, pass)
-//    for client.Step(in) {
-//            out := client.Out()
-//            //发送到服务端
-//            in := serverOut
-//    }
-//    if client.Err() != nil {
-//            //认证失败
-//    }
-//
+//	var in []byte
+//	var client = scram.NewClient(sha1.New, user, pass)
+//	for client.Step(in) {
+//	        out := client.Out()
+//	        //发送到服务端
+//	        in := serverOut
+//	}
+//	if client.Err() != nil {
+//	        //认证失败
+//	}
 type Client struct {
 	newHash func() hash.Hash
 
@@ -63,8 +64,7 @@ type Client struct {
 //
 // 以SCRAM-SHA-256为例,用法如下:
 //
-//    client := scram.NewClient(sha256.New, user, pass)
-//
+//	client := scram.NewClient(sha256.New, user, pass)
 func NewClient(newHash func() hash.Hash, userName, password string) (client *Client) {
 	client = &Client{
 		newHash: newHash,
@@ -78,8 +78,11 @@ func NewClient(newHash func() hash.Hash, userName, password string) (client *Cli
 
 // Out返回当前要发送到服务端的数据
 func (client *Client) Out() (bytes []byte) {
-	if 0 == client.out.Len() { return nil
-	}else { return client.out.Bytes() }
+	if 0 == client.out.Len() {
+		return nil
+	} else {
+		return client.out.Bytes()
+	}
 }
 
 // Err返回出现的错误，无错误时返回空
@@ -90,7 +93,7 @@ func (client *Client) Err() (err error) {
 
 // SetNonce将客户端nonce设置为提供的值
 // 如果没有设置，则nonce会通过crypto/rand自动生成
-func (client *Client) SetNonce(nonce []byte) (){
+func (client *Client) SetNonce(nonce []byte) {
 	client.clientNonce = nonce
 	return
 }
@@ -107,9 +110,12 @@ func (client *Client) Step(in []byte) (state bool) {
 	}
 	client.step++
 	switch client.step {
-	case 1: client.err = client.step1(in)
-	case 2: client.err = client.step2(in)
-	case 3: client.err = client.step3(in)
+	case 1:
+		client.err = client.step1(in)
+	case 2:
+		client.err = client.step2(in)
+	case 3:
+		client.err = client.step3(in)
 	}
 	state = (2 < client.step || nil != client.err)
 	return
@@ -119,15 +125,19 @@ func (client *Client) step1(in []byte) (err error) {
 	if 0 == len(client.clientNonce) {
 		const nonceLen = 16
 		buf := make([]byte, nonceLen+b64.EncodedLen(nonceLen))
-		if _, readErr := rand.Read(buf[:nonceLen])
-		nil != readErr { return fmt.Errorf("cannot read random SCRAM-SHA-256 nonce from operating system: %v", readErr) }
+		if _, readErr := rand.Read(buf[:nonceLen]); nil != readErr {
+			return fmt.Errorf("cannot read random SCRAM-SHA-256 nonce from operating system: %v", readErr)
+		}
 		client.clientNonce = buf[nonceLen:]
 		b64.Encode(client.clientNonce, buf[:nonceLen])
 	}
-	client.authMsg.WriteString("n="); escaper.WriteString(&client.authMsg, client.user)
-	client.authMsg.WriteString(",r="); client.authMsg.Write(client.clientNonce)
+	client.authMsg.WriteString("n=")
+	escaper.WriteString(&client.authMsg, client.user)
+	client.authMsg.WriteString(",r=")
+	client.authMsg.Write(client.clientNonce)
 
-	client.out.WriteString("n,,"); client.out.Write(client.authMsg.Bytes())
+	client.out.WriteString("n,,")
+	client.out.Write(client.authMsg.Bytes())
 	err = nil
 	return
 }
@@ -135,7 +145,8 @@ func (client *Client) step1(in []byte) (err error) {
 var b64 = base64.StdEncoding
 
 func (client *Client) step2(in []byte) (err error) {
-	client.authMsg.WriteByte(','); client.authMsg.Write(in)
+	client.authMsg.WriteByte(',')
+	client.authMsg.Write(in)
 
 	fields := bytes.Split(in, []byte(","))
 	if 3 != len(fields) {
@@ -175,10 +186,13 @@ func (client *Client) step2(in []byte) (err error) {
 	}
 	client.saltPassword(salt, iterCount)
 
-	client.authMsg.WriteString(",c=biws,r="); client.authMsg.Write(client.serverNonce)
+	client.authMsg.WriteString(",c=biws,r=")
+	client.authMsg.Write(client.serverNonce)
 
-	client.out.WriteString("c=biws,r="); client.out.Write(client.serverNonce)
-	client.out.WriteString(",p="); client.out.Write(client.clientProof())
+	client.out.WriteString("c=biws,r=")
+	client.out.Write(client.serverNonce)
+	client.out.WriteString(",p=")
+	client.out.Write(client.clientProof())
 	err = nil
 	return
 }
@@ -205,17 +219,14 @@ func (client *Client) step3(in []byte) (err error) {
 	return
 }
 
-func (client *Client) saltPassword(salt []byte, iterCount int) (){
+func (client *Client) saltPassword(salt []byte, iterCount int) {
 	mac := hmac.New(client.newHash, []byte(client.pass))
 	mac.Write(salt)
 	mac.Write([]byte{0, 0, 0, 1})
 	ui := mac.Sum(nil)
 	hi := make([]byte, len(ui))
 	copy(hi, ui)
-	for
-	i := 1
-	iterCount > i
-	i++ {
+	for i := 1; iterCount > i; i++ {
 		mac.Reset()
 		mac.Write(ui)
 		mac.Sum(ui[:0])
@@ -237,7 +248,9 @@ func (client *Client) clientProof() (bytes []byte) {
 	mac.Write(client.authMsg.Bytes())
 	clientProof := mac.Sum(nil)
 
-	for i, b := range clientKey { clientProof[i] = clientProof[i] ^ b }
+	for i, b := range clientKey {
+		clientProof[i] = clientProof[i] ^ b
+	}
 
 	clientProof64 := make([]byte, b64.EncodedLen(len(clientProof)))
 	b64.Encode(clientProof64, clientProof)

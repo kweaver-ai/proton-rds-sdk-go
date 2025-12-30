@@ -11,7 +11,7 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
 
   3.修改内容：
@@ -21,10 +21,10 @@
 package gokb
 
 import (
+	"database/sql"
 	"math"
 	"reflect"
 	"time"
-	"database/sql"
 )
 
 func (fd fieldDesc) Type(cn *conn) (rt reflect.Type) {
@@ -125,9 +125,9 @@ func (fd fieldDesc) Length(cn *conn) (len int64, state bool) {
 				secondSizeT = 0
 			case 1:
 				//Bizarraely SELECT '0:0:0.1'::time(1); 返回2位.
-				secondSizeT = 1 + 1;
+				secondSizeT = 1 + 1
 			default:
-				secondSizeT = fd.Mod + 1;
+				secondSizeT = fd.Mod + 1
 			}
 			// 我们假设所有这些情况的最坏情况。
 			// time = '00:00:00' = 8
@@ -211,7 +211,7 @@ func (fd fieldDesc) PrecisionScale(cn *conn) (precision int64, scale int64, stat
 				precision = int64((mod >> 16) & 0xffff)
 				scale = int64(mod & 0xffff)
 				state = true
-				return 
+				return
 			}
 		case cn.allOid.T_text, cn.allOid.T_bytea:
 			return math.MaxInt64, 0, true
@@ -258,9 +258,9 @@ func (fd fieldDesc) PrecisionScale(cn *conn) (precision int64, scale int64, stat
 				secondSizeT = 0
 			case 1:
 				//Bizarraely SELECT '0:0:0.1'::time(1); 返回2位.
-				secondSizeT = 1 + 1;
+				secondSizeT = 1 + 1
 			default:
-				secondSizeT = fd.Mod + 1;
+				secondSizeT = fd.Mod + 1
 			}
 			// 我们假设所有这些情况的最坏情况。
 			// time = '00:00:00' = 8
@@ -329,7 +329,7 @@ func (fd fieldDesc) PrecisionScale(cn *conn) (precision int64, scale int64, stat
 				precision = int64((mod >> 16) & 0xffff)
 				scale = int64(mod & 0xffff)
 				state = true
-				return 
+				return
 			}
 		default:
 			precision = 0
@@ -343,7 +343,7 @@ func (fd fieldDesc) PrecisionScale(cn *conn) (precision int64, scale int64, stat
 func (fd fieldDesc) NullAble(cn *conn) (nullable bool, hasNullable bool) {
 	switch fd.OID {
 	case cn.allOid.T_SIMPLE_INTEGER, cn.allOid.T_SIMPLE_FLOAT, cn.allOid.T_SIMPLE_DOUBLE, cn.allOid.T_positiven, cn.allOid.T_NATURALN,
-		 cn.allOid.T__SIMPLE_INTEGER, cn.allOid.T__SIMPLE_FLOAT, cn.allOid.T__SIMPLE_DOUBLE, cn.allOid.T__positiven, cn.allOid.T__NATURALN:
+		cn.allOid.T__SIMPLE_INTEGER, cn.allOid.T__SIMPLE_FLOAT, cn.allOid.T__SIMPLE_DOUBLE, cn.allOid.T__positiven, cn.allOid.T__NATURALN:
 		nullable = false
 		hasNullable = true
 		return

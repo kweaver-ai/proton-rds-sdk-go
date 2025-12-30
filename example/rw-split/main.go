@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	_ "github.com/AISHU-Technology/proton-rds-sdk-go/driver"
-	"github.com/AISHU-Technology/proton-rds-sdk-go/sqlx"
+	_ "github.com/kweaver-ai/proton-rds-sdk-go/driver"
+	"github.com/kweaver-ai/proton-rds-sdk-go/sqlx"
 )
 
 func main() {

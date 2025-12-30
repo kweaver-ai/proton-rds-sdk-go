@@ -12,9 +12,9 @@
 
 * 修改记录：
   1.修改时间：
-  
+
   2.修改人：
-  
+
   3.修改内容：
 
 ******************************************************************************/
@@ -51,8 +51,8 @@ func newDialListenerConn(d Dialer, name string, c chan<- *Notification) (lc *Lis
 	}
 
 	l := &ListenerConn{
-		cn:               cn.(*conn), notificationChan: c,
-		connState:        connStateIdle, replyChan:        make(chan message, 2),
+		cn: cn.(*conn), notificationChan: c,
+		connState: connStateIdle, replyChan: make(chan message, 2),
 	}
 
 	go l.listenerConnMain()
@@ -61,13 +61,13 @@ func newDialListenerConn(d Dialer, name string, c chan<- *Notification) (lc *Lis
 	return
 }
 
-
 // 只允许一个程序在连接上运行查询
 // 所以在连接上发送的goroutine必须保持senderLock。
 // 如果发生了不可恢复的错误,应放弃ListenerConn,并返回错误。
 func (lc *ListenerConn) acquireSenderLock() (err error) {
 	// 必须先获得senderLock以避免死锁
-	lc.senderLock.Lock(); lc.connectionLock.Lock()
+	lc.senderLock.Lock()
+	lc.connectionLock.Lock()
 	err = lc.err
 	lc.connectionLock.Unlock()
 	if nil != err {
@@ -78,7 +78,7 @@ func (lc *ListenerConn) acquireSenderLock() (err error) {
 	return
 }
 
-func (lc *ListenerConn) releaseSenderLock() () {
+func (lc *ListenerConn) releaseSenderLock() {
 	lc.senderLock.Unlock()
 	return
 }
@@ -88,10 +88,14 @@ func (lc *ListenerConn) setState(newState int32) (state bool) {
 	var expectedState int32
 
 	switch newState {
-	case connStateIdle: expectedState = connStateExpectReadyForQuery;
-	case connStateExpectResponse: expectedState = connStateIdle;
-	case connStateExpectReadyForQuery: expectedState = connStateExpectResponse;
-	default: panic(fmt.Sprintf("unexpected listenerConnState %d", newState));
+	case connStateIdle:
+		expectedState = connStateExpectReadyForQuery
+	case connStateExpectResponse:
+		expectedState = connStateIdle
+	case connStateExpectReadyForQuery:
+		expectedState = connStateExpectResponse
+	default:
+		panic(fmt.Sprintf("unexpected listenerConnState %d", newState))
 	}
 	state = atomic.CompareAndSwapInt32(&lc.connState, expectedState, newState)
 	return
@@ -106,7 +110,9 @@ func (lc *ListenerConn) listenerConnLoop() (err error) {
 	for {
 		t, recvErr := lc.cn.recvMessage(r)
 		err = recvErr
-		if nil != err { return err; }
+		if nil != err {
+			return err
+		}
 
 		switch t {
 		case 'A':
@@ -140,8 +146,9 @@ func (lc *ListenerConn) listenerConnLoop() (err error) {
 
 		case 'S':
 		case 'N':
-			if n := lc.cn.noticeHandler
-			nil != n { n(parseError(r)) }
+			if n := lc.cn.noticeHandler; nil != n {
+				n(parseError(r))
+			}
 		default:
 			err = fmt.Errorf("unexpected message %q from server in listenerConnLoop", t)
 			return
@@ -151,7 +158,7 @@ func (lc *ListenerConn) listenerConnLoop() (err error) {
 
 // listenerConnMain主要用于接收并处理来自数据库的通知等消息
 // 主要是调用listenerConnLoop实现处理消息
-func (lc *ListenerConn) listenerConnMain() (){
+func (lc *ListenerConn) listenerConnMain() {
 	err := lc.listenerConnLoop()
 
 	// listenerConnLoop已经处理完来自数据库的消息，先关闭数据库连接
@@ -161,8 +168,11 @@ func (lc *ListenerConn) listenerConnMain() (){
 	// 也可能没有错误，但需要覆盖net.errClosed
 	// 如果两个调用者在对套接字操作时连接丢失那么获得任一个调用者的错误都是可以接受的
 	lc.connectionLock.Lock()
-	if nil == lc.err { lc.err = err; }
-	lc.cn.Close(); lc.connectionLock.Unlock()
+	if nil == lc.err {
+		lc.err = err
+	}
+	lc.cn.Close()
+	lc.connectionLock.Unlock()
 
 	// 发送中的查询,确保没有调用者等待对该查询的响应
 	close(lc.replyChan)
@@ -193,8 +203,12 @@ func (lc *ListenerConn) UnlistenAll() (state bool, err error) {
 // Ping远程服务器以确保它还存在。Non-nil错误意味着连接失败,应该被抛弃。
 func (lc *ListenerConn) Ping() (err error) {
 	sent, err := lc.ExecSimpleQuery("")
-	if !sent { return }
-	if nil != err { panic(err) }
+	if !sent {
+		return
+	}
+	if nil != err {
+		panic(err)
+	}
 	err = nil
 	return
 }
@@ -205,8 +219,9 @@ func (lc *ListenerConn) sendSimpleQuery(query string) (err error) {
 	defer errRecoverNoErrBadConn(&err)
 
 	// 在发送查询之前必须设置连接状态
-	if !lc.setState(connStateExpectResponse) { panic("two queries running at the same time"); }
-
+	if !lc.setState(connStateExpectResponse) {
+		panic("two queries running at the same time")
+	}
 
 	// 不能在这里使用l.cn.writeBuf,
 	// 因为它使用的是listenerConnLoop可能会重写缓冲区。
@@ -227,8 +242,7 @@ func (lc *ListenerConn) sendSimpleQuery(query string) (err error) {
 // 在调用ExecSimpleQuery后返回一个已执行=false值，
 // 连接要么关闭,要么将在此后不久关闭,所有随后执行的查询将返回一个错误。
 func (lc *ListenerConn) ExecSimpleQuery(query string) (executed bool, err error) {
-	if err = lc.acquireSenderLock()
-	nil != err {
+	if err = lc.acquireSenderLock(); nil != err {
 		executed = false
 		return
 	}
@@ -238,8 +252,11 @@ func (lc *ListenerConn) ExecSimpleQuery(query string) (executed bool, err error)
 	if nil != err {
 		lc.connectionLock.Lock()
 		// 设置之前没有设置的错误指针
-		if nil == lc.err { lc.err = err }
-		lc.connectionLock.Unlock(); lc.cn.c.Close()
+		if nil == lc.err {
+			lc.err = err
+		}
+		lc.connectionLock.Unlock()
+		lc.cn.c.Close()
 		executed = false
 		return
 	}
@@ -248,19 +265,25 @@ func (lc *ListenerConn) ExecSimpleQuery(query string) (executed bool, err error)
 		m, ok := <-lc.replyChan
 		if !ok {
 			// 失去了与服务器的连接,不要等待响应。错误消息已经被设置
-			lc.connectionLock.Lock(); lcErr := lc.err; lc.connectionLock.Unlock()
+			lc.connectionLock.Lock()
+			lcErr := lc.err
+			lc.connectionLock.Unlock()
 			executed = false
 			err = lcErr
 			return
 		}
 		switch m.typ {
 		case 'Z':
-			if nil != m.err { panic("m.err != nil"); }
+			if nil != m.err {
+				panic("m.err != nil")
+			}
 			executed = true
 			return
 
 		case 'E':
-			if nil == m.err { panic("m.err == nil"); }
+			if nil == m.err {
+				panic("m.err == nil")
+			}
 			err = m.err
 
 		default:
@@ -286,7 +309,6 @@ func (lc *ListenerConn) Close() (err error) {
 	return
 }
 
-
 // Err()返回连接关闭的原因
 func (lc *ListenerConn) Err() (err error) {
 	err = lc.err
@@ -308,10 +330,10 @@ func NewListener(name string, minReconnectInterval time.Duration, maxReconnectIn
 // nNewDialListener类似NewListener,但需要一个Dialer
 func NewDialListener(d Dialer, name string, minReconnectInterval time.Duration, maxReconnectInterval time.Duration, eventCallback EventCallbackType) (l *Listener) {
 
-	l = &Listener{ name:                 name,
-		minReconnectInterval: minReconnectInterval,  maxReconnectInterval: maxReconnectInterval,
-		dialer:               d,                     eventCallback:        eventCallback,
-		channels: make(map[string]struct{}),         Notify: make(chan *Notification, 32),
+	l = &Listener{name: name,
+		minReconnectInterval: minReconnectInterval, maxReconnectInterval: maxReconnectInterval,
+		dialer: d, eventCallback: eventCallback,
+		channels: make(map[string]struct{}), Notify: make(chan *Notification, 32),
 	}
 	l.reconnectCond = sync.NewCond(&l.lock)
 	go l.listenerMain()
@@ -350,7 +372,9 @@ func (listener *Listener) Listen(channel string) (err error) {
 	if nil != listener.cn {
 		gotResponse, resErr := listener.cn.Listen(channel)
 		err = resErr
-		if gotResponse && nil != err { return }
+		if gotResponse && nil != err {
+			return
+		}
 	}
 
 	listener.channels[channel] = struct{}{}
@@ -387,7 +411,9 @@ func (listener *Listener) Unlisten(channel string) (err error) {
 	if nil != listener.cn {
 		gotResponse, resErr := listener.cn.Unlisten(channel)
 		err = resErr
-		if gotResponse && nil != err { return }
+		if gotResponse && nil != err {
+			return
+		}
 	}
 
 	delete(listener.channels, channel)
@@ -410,7 +436,9 @@ func (listener *Listener) UnlistenAll() (err error) {
 	if nil != listener.cn {
 		gotResponse, resErr := listener.cn.UnlistenAll()
 		err = resErr
-		if gotResponse && nil != err { return }
+		if gotResponse && nil != err {
+			return
+		}
 	}
 
 	listener.channels = make(map[string]struct{})
@@ -442,8 +470,12 @@ func (listener *Listener) disconnectCleanup() (err error) {
 
 	// 检查；在通道关闭前，不需要调用Err()。
 	select {
-	case _, ok := <-listener.connNotificationChan: if ok { panic("connNotificationChan not closed"); }
-	default: panic("connNotificationChan not closed");
+	case _, ok := <-listener.connNotificationChan:
+		if ok {
+			panic("connNotificationChan not closed")
+		}
+	default:
+		panic("connNotificationChan not closed")
 	}
 
 	err = listener.cn.Err()
@@ -459,12 +491,16 @@ func (listener *Listener) resync(cn *ListenerConn, notificationChan <-chan *Noti
 		for channel := range listener.channels {
 			// 如果得到响应，将错误返回给调用者
 			gotResponse, err := cn.Listen(channel)
-			if gotResponse && nil != err { doneChan <- err; return }
+			if gotResponse && nil != err {
+				doneChan <- err
+				return
+			}
 
 			// 如果无法到达服务器，等待notificationChan关闭，
 			// 然后从连接中返回错误消息，类似ListenerConn的接口
 			if nil != err {
-				for range notificationChan { }
+				for range notificationChan {
+				}
 				doneChan <- cn.Err()
 				return
 			}
@@ -475,8 +511,12 @@ func (listener *Listener) resync(cn *ListenerConn, notificationChan <-chan *Noti
 	// 在同步过程中忽略通知,以避免死锁
 	for {
 		select {
-		case _, ok := <-notificationChan: if !ok { notificationChan = nil; }
-		case err := <-doneChan: return err;
+		case _, ok := <-notificationChan:
+			if !ok {
+				notificationChan = nil
+			}
+		case err := <-doneChan:
+			return err
 		}
 	}
 }
@@ -491,13 +531,18 @@ func (listener *Listener) closed() (state bool) {
 func (listener *Listener) connect() (err error) {
 	notificationChan := make(chan *Notification, 32)
 	cn, err := newDialListenerConn(listener.dialer, listener.name, notificationChan)
-	if nil != err { return }
+	if nil != err {
+		return
+	}
 
 	listener.lock.Lock()
 	defer listener.lock.Unlock()
 
 	err = listener.resync(cn, notificationChan)
-	if nil != err { cn.Close(); return}
+	if nil != err {
+		cn.Close()
+		return
+	}
 
 	listener.cn, listener.connNotificationChan = cn, notificationChan
 	listener.reconnectCond.Broadcast()
@@ -516,7 +561,9 @@ func (listener *Listener) Close() (err error) {
 		return
 	}
 
-	if nil != listener.cn { listener.cn.Close() }
+	if nil != listener.cn {
+		listener.cn.Close()
+	}
 	listener.isClosed = true
 
 	// 非阻塞的调用Listen()
@@ -525,40 +572,59 @@ func (listener *Listener) Close() (err error) {
 	return
 }
 
-func (listener *Listener) emitEvent(event ListenerEventType, err error) () {
-	if nil != listener.eventCallback { listener.eventCallback(event, err) }
+func (listener *Listener) emitEvent(event ListenerEventType, err error) {
+	if nil != listener.eventCallback {
+		listener.eventCallback(event, err)
+	}
 	return
 }
 
 // 在可能的情况下保持与服务器的连接，等待通知并发送事件。
-func (listener *Listener) listenerConnLoop() () {
+func (listener *Listener) listenerConnLoop() {
 	var nextReconnect time.Time
 
 	reconnectInterval := listener.minReconnectInterval
 	for {
 		for {
 			err := listener.connect()
-			if nil == err { break }
+			if nil == err {
+				break
+			}
 
-			if listener.closed() { return }; listener.emitEvent(ListenerEventConnectionAttemptFailed, err)
+			if listener.closed() {
+				return
+			}
+			listener.emitEvent(ListenerEventConnectionAttemptFailed, err)
 
-			time.Sleep(reconnectInterval); reconnectInterval = reconnectInterval * 2
-			if listener.maxReconnectInterval < reconnectInterval { reconnectInterval = listener.maxReconnectInterval }
+			time.Sleep(reconnectInterval)
+			reconnectInterval = reconnectInterval * 2
+			if listener.maxReconnectInterval < reconnectInterval {
+				reconnectInterval = listener.maxReconnectInterval
+			}
 		}
 
-		if nextReconnect.IsZero() { listener.emitEvent(ListenerEventConnected, nil)
-		} else { listener.emitEvent(ListenerEventReconnected, nil); listener.Notify <- nil }
+		if nextReconnect.IsZero() {
+			listener.emitEvent(ListenerEventConnected, nil)
+		} else {
+			listener.emitEvent(ListenerEventReconnected, nil)
+			listener.Notify <- nil
+		}
 
-		reconnectInterval = listener.minReconnectInterval; nextReconnect = time.Now().Add(reconnectInterval)
+		reconnectInterval = listener.minReconnectInterval
+		nextReconnect = time.Now().Add(reconnectInterval)
 
 		for {
 			notification, ok := <-listener.connNotificationChan
-			if !ok { break }
+			if !ok {
+				break
+			}
 			listener.Notify <- notification
 		}
 
 		err := listener.disconnectCleanup()
-		if listener.closed() { return }
+		if listener.closed() {
+			return
+		}
 		listener.emitEvent(ListenerEventDisconnected, err)
 
 		time.Sleep(time.Until(nextReconnect))
@@ -566,7 +632,7 @@ func (listener *Listener) listenerConnLoop() () {
 	return
 }
 
-func (listener *Listener) listenerMain() () {
+func (listener *Listener) listenerMain() {
 	listener.listenerConnLoop()
 	close(listener.Notify)
 	return

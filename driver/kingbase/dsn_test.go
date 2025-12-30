@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/AISHU-Technology/proton-rds-sdk-go/driver/common"
+	"github.com/kweaver-ai/proton-rds-sdk-go/driver/common"
 )
 
 func TestFormatDSN(t *testing.T) {
