@@ -1,13 +1,13 @@
-//go:build linux
+//go:build darwin
 
 /******************************************************************************
 * 版权信息：中电科金仓（北京）科技股份有限公司
 
 * 作者：KingbaseES
 
-* 文件名：conn.go
+* 文件名：conn_darwin.go
 
-* 功能描述：前后端通信相关接口
+* 功能描述：macOS平台前后端通信相关接口
 
 * 其它说明：
 
@@ -36,13 +36,14 @@ func CreateDialer(timeout timeoutParams) net.Dialer {
 		Control: func(network, address string, c syscall.RawConn) error {
 			var controlErr error
 			err := c.Control(func(fd uintptr) {
-				//通过系统调用依次设置keepalive_count、tcp_user_timeout
-				//keepalive_idle和keepalive_interval必须在上述KeepAlive设置，否则会被KeepAlive的默认值15s覆盖
-				controlErr = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_TCP, syscall.TCP_KEEPCNT, timeout.keepalive_count)
-				if controlErr != nil {
-					return
-				}
-				controlErr = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_TCP, 0x12, timeout.tcp_user_timeout)
+				// macOS使用TCP_KEEPALIVE而不是TCP_KEEPIDLE
+				// TCP_KEEPALIVE在macOS上的值是0x10
+				const TCP_KEEPALIVE = 0x10
+
+				// 设置keepalive参数
+				// 注意：macOS不支持TCP_KEEPCNT和TCP_USER_TIMEOUT
+				// 只设置TCP_KEEPALIVE (相当于Linux的TCP_KEEPIDLE)
+				controlErr = syscall.SetsockoptInt(int(fd), syscall.IPPROTO_TCP, TCP_KEEPALIVE, timeout.keepalive_interval)
 				if controlErr != nil {
 					return
 				}
